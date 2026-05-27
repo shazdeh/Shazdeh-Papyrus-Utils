@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <string>
-#include "../external/simpleini/SimpleIni.h"
 #include <unordered_set>
+#include "SimpleIni.h";
 
 using namespace std::literals;
 

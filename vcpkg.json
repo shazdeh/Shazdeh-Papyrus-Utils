@@ -12,7 +12,7 @@
     "clib-utils-qtr",
     "directxtk",
     "skse-mcp",
-    "cpr",
+    "simpleini",
     "nlohmann-json"
   ],
   "overrides": [

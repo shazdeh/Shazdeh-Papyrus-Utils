@@ -86,9 +86,6 @@ target_include_directories(
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE IS_HOST_PLUGIN)
 
-find_package(cpr CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE cpr::cpr)
-
 set(wildlander_output false)
 set(steam_owrt_output false)
 set(steam_mods_output true)
