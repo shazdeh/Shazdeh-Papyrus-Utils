@@ -1011,21 +1011,32 @@ std::vector<Actor*> FilterActorsArrayForFaction(StaticFunctionTag*, std::vector<
     return actors;
 }
 
-std::string GetCraftingMenuSubType() {
+bool IsEnchantingMenuOpen(StaticFunctionTag*) {
     auto ui = UI::GetSingleton();
     if (ui && ui->IsMenuOpen(CraftingMenu::MENU_NAME)) {
-        if (auto& movie = ui->GetMenu<CraftingMenu>()->uiMovie) {
-            GFxValue subtype;
-            movie->GetVariable(&subtype, "_root.Menu._subtypeName");
-            return subtype.GetString();
-        }
+        const auto menu = UI::GetSingleton()->GetMenu<CraftingMenu>().get();
+        return skyrim_cast<CraftingSubMenus::EnchantConstructMenu*>(menu->GetCraftingSubMenu());
     }
-    return "";
+    return false;
 }
 
-bool IsEnchantingMenuOpen(StaticFunctionTag*) { return GetCraftingMenuSubType() == "EnchantConstruct"; }
-bool IsAlchemyMenuOpen(StaticFunctionTag*) { return GetCraftingMenuSubType() == "Alchemy"; }
-bool IsTemperingMenuOpen(StaticFunctionTag*) { return GetCraftingMenuSubType() == "Smithing"; }
+bool IsAlchemyMenuOpen(StaticFunctionTag*) {
+    auto ui = UI::GetSingleton();
+    if (ui && ui->IsMenuOpen(CraftingMenu::MENU_NAME)) {
+        const auto menu = UI::GetSingleton()->GetMenu<CraftingMenu>().get();
+        return skyrim_cast<CraftingSubMenus::CraftingSubMenus::AlchemyMenu*>(menu->GetCraftingSubMenu());
+    }
+    return false;
+}
+
+bool IsTemperingMenuOpen(StaticFunctionTag*) {
+    auto ui = UI::GetSingleton();
+    if (ui && ui->IsMenuOpen(CraftingMenu::MENU_NAME)) {
+        const auto menu = UI::GetSingleton()->GetMenu<CraftingMenu>().get();
+        return skyrim_cast<CraftingSubMenus::SmithingMenu*>(menu->GetCraftingSubMenu());
+    }
+    return false;
+}
 
 class CheckDisease : public MagicTarget::ForEachActiveEffectVisitor {
 public:
