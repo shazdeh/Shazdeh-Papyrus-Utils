@@ -73,8 +73,8 @@ Float Function GetBaseAVByIndex(Actor akActor, Int aiIndex) Global Native
 
 String Function GetAVName(Int aiIndex) Global Native
 
-; Bool Function IsDiseased(Actor akActor) Global Native
-; Int Function GetDiseasesCount(Actor akActor) Global Native
+Bool Function IsDiseased(Actor akActor) Global Native
+Int Function GetDiseasesCount(Actor akActor) Global Native
 
 Int Function CountWornWithKeyword(Actor akActor, keyword akKeyword) Global Native
 
@@ -82,6 +82,12 @@ Int Function CountCommandingActors(Actor akActor) Global Native
 
 ; akFilter can be Race, or a FormList of Races
 Int Function CountHostilesToActor(Actor akActor, Form akFilter = None) Global Native
+
+; performs akActor.HasMagicEffect on all effects inside akForm
+; akForm can be any of Spell, Ingredient, Potion, Scroll, Enchantment
+Bool Function ActorHasSpellEffect(Actor akActor, Form akForm) Global Native
+Bool Function ActorHasSpellEffectInList(Actor akActor, FormList akList) Global Native
+Bool Function ActorHasSpellEffectInArray(Actor akActor, Form[] arForms) Global Native
 
 
 ;----------------------------------------------------------------------------------------------------------
@@ -153,6 +159,8 @@ Function TransferItemFromContainersArray(FormList akList, ObjectReference[] akRe
 
 Function TransferItemFromContainersList(FormList akList, ObjectReference akRef, Form akItem, Int aiCount) Global Native
 
+Spell[] Function GetAllDiseaseSpells() Global Native
+
 
 ;----------------------------------------------------------------------------------------------------------
 ;Gamepad
@@ -220,6 +228,9 @@ ObjectReference Function GetCurrentBookRef() Global Native
 Bool Function IsEnchantingMenuOpen() Global Native
 Bool Function IsAlchemyMenuOpen() Global Native
 Bool Function IsTemperingMenuOpen() Global Native
+
+; refresh the InventoryMenu
+Function RequestInventoryMenuUpdate() Global Native
 
 
 ;----------------------------------------------------------------------------------------------------------

@@ -1038,30 +1038,16 @@ bool IsTemperingMenuOpen(StaticFunctionTag*) {
     return false;
 }
 
-class CheckDisease : public MagicTarget::ForEachActiveEffectVisitor {
-public:
-    bool is = false;
-    virtual BSContainer::ForEachResult Accept(ActiveEffect* a_effect) override {
-        if (a_effect) {
-            auto* spell = a_effect->spell;
-            if (spell && spell->GetSpellType() == RE::MagicSystem::SpellType::kDisease) {
-                is = true;
-                return BSContainer::ForEachResult::kStop;
-            }
+std::vector<SpellItem*> GetAllDiseaseSpells(StaticFunctionTag*) {
+    std::vector<SpellItem*> result;
+    const auto& all = TESDataHandler::GetSingleton()->GetFormArray<SpellItem>();
+    for (auto* spell : all) {
+        if (spell->GetSpellType() == MagicSystem::SpellType::kDisease) {
+            result.push_back(spell);
         }
-        return BSContainer::ForEachResult::kContinue;
     }
-};
 
-bool IsDiseased(StaticFunctionTag*, Actor* a_actor) {
-    if (!a_actor) return false;
-    CheckDisease checker;
-    a_actor->ForEachActiveEffect(checker);
-    return checker.is;
-}
-
-int GetDiseasesCount(StaticFunctionTag*, Actor* a_actor) {
-    return 0;
+    return result;
 }
 
 int CountWornWithKeyword(StaticFunctionTag*, Actor* a_actor, BGSKeyword* a_keyword) {
@@ -1126,6 +1112,84 @@ int CountHostilesToActor(StaticFunctionTag*, Actor* a_actor, TESForm* a_filter =
     return count;
 }
 
+bool ActorHasSpellEffect(StaticFunctionTag*, Actor* a_actor, TESForm* a_spell) {
+    if (!a_actor || !a_spell) return false;
+    auto* mt = a_actor->AsMagicTarget();
+    if (!mt) return false;
+    auto effects = mt->GetActiveEffectList();
+    for (auto* effect : *effects) {
+        if (!effect || !effect->spell) continue;
+        if (effect->spell == a_spell) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ActorHasSpellEffectInList(StaticFunctionTag*, Actor* a_actor, BGSListForm* a_list) {
+    if (!a_actor || !a_list) return false;
+    bool result = false;
+    a_list->ForEachForm([&](TESForm* listItem) {
+        if (ActorHasSpellEffect(nullptr, a_actor, listItem)) {
+            result = true;
+            return BSContainer::ForEachResult::kStop;
+        }
+        return BSContainer::ForEachResult::kContinue;
+    });
+
+    return result;
+}
+
+bool ActorHasSpellEffectInArray(StaticFunctionTag*, Actor* a_actor, const RE::reference_array<TESForm*> a_array) {
+    if (!a_actor || a_array.empty()) return false;
+    for (auto item : a_array) {
+        if (ActorHasSpellEffect(nullptr, a_actor, item)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsDiseased(StaticFunctionTag*, Actor* a_actor) {
+    if (!a_actor) return false;
+    auto* mt = a_actor->AsMagicTarget();
+    if (!mt) return false;
+    auto effects = mt->GetActiveEffectList();
+    for (auto* effect : *effects) {
+        if (!effect || !effect->spell) continue;
+        if (effect->spell->GetSpellType() == MagicSystem::SpellType::kDisease) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+int GetDiseasesCount(StaticFunctionTag*, Actor* a_actor) {
+    if (!a_actor) return 0;
+    auto* mt = a_actor->AsMagicTarget();
+    if (!mt) return 0;
+    auto effects = mt->GetActiveEffectList();
+    int result = 0;
+    std::unordered_set<MagicItem*> visited;
+    for (auto* effect : *effects) {
+        if (!effect || !effect->spell) continue;
+        if (effect->spell->GetSpellType() == MagicSystem::SpellType::kDisease && !visited.contains(effect->spell)) {
+            visited.insert(effect->spell);
+            result++;
+        }
+    }
+
+    return result;
+}
+
+void RequestInventoryMenuUpdate(StaticFunctionTag*) {
+    if (UI::GetSingleton()->IsMenuOpen(InventoryMenu::MENU_NAME)) {
+        RE::SendUIMessage::SendInventoryUpdateMessage(PlayerCharacter::GetSingleton(), nullptr);
+    }
+}
+
 bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     std::string_view script = "ShazdehUtils";
 
@@ -1169,6 +1233,11 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("CountWornWithKeyword", script, CountWornWithKeyword);
     vm->RegisterFunction("CountCommandingActors", script, CountCommandingActors);
     vm->RegisterFunction("CountHostilesToActor", script, CountHostilesToActor);
+    vm->RegisterFunction("ActorHasSpellEffect", script, ActorHasSpellEffect);
+    vm->RegisterFunction("ActorHasSpellEffectInList", script, ActorHasSpellEffectInList);
+    vm->RegisterFunction("ActorHasSpellEffectInArray", script, ActorHasSpellEffectInArray);
+    vm->RegisterFunction("IsDiseased", script, IsDiseased);
+    vm->RegisterFunction("GetDiseasesCount", script, GetDiseasesCount);
 
     // clipboard
     vm->RegisterFunction("SetClipboard", script, SetClipboard);
@@ -1190,6 +1259,7 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("GetItemCountInContainersList", script, GetItemCountInContainersList);
     vm->RegisterFunction("TransferItemFromContainersList", script, TransferItemFromContainersList);
     vm->RegisterFunction("TransferItemFromContainersArray", script, TransferItemFromContainersArray);
+    vm->RegisterFunction("GetAllDiseaseSpells", script, GetAllDiseaseSpells);
 
     // gamepad
     vm->RegisterFunction("IsGamepadConnected", script, IsGamepadConnected);
@@ -1215,6 +1285,7 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("IsEnchantingMenuOpen", script, IsEnchantingMenuOpen);
     vm->RegisterFunction("IsAlchemyMenuOpen", script, IsAlchemyMenuOpen);
     vm->RegisterFunction("IsTemperingMenuOpen", script, IsTemperingMenuOpen);
+    vm->RegisterFunction("RequestInventoryMenuUpdate", script, RequestInventoryMenuUpdate);
 
     // ini
     vm->RegisterFunction("GetINIString", script, GetINIString);
@@ -1238,8 +1309,6 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
 
     // doesn't work
     // vm->RegisterFunction("GetPlayerSpeechTarget", script, GetPlayerSpeechTarget);
-    // vm->RegisterFunction("IsDiseased", script, IsDiseased); // ForEachActiveEffect fails
-    // vm->RegisterFunction("GetDiseasesCount", script, GetDiseasesCount);
     // vm->RegisterFunction("DispelAllEffectsWithKeyword", script, );
     // vm->RegisterFunction("DispelAllEffectsWithKeyword", script, );
 
