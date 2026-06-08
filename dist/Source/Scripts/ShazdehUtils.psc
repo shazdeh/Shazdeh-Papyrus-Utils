@@ -91,6 +91,17 @@ Bool Function ActorHasSpellEffectInArray(Actor akActor, Form[] arForms) Global N
 
 
 ;----------------------------------------------------------------------------------------------------------
+;Player
+;----------------------------------------------------------------------------------------------------------
+
+; items in the array/formlist can be either: MagicEffect, WordOfPower, or Enchantment
+Int Function CountKnownFormsInList(FormList akList) Global Native
+Int Function CountKnownFormsInArray(Form[] akArray) Global Native
+
+Bool Function IsPickpocketing() Global Native
+
+
+;----------------------------------------------------------------------------------------------------------
 ;Clipboard
 ;----------------------------------------------------------------------------------------------------------
 

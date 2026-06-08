@@ -1190,6 +1190,27 @@ void RequestInventoryMenuUpdate(StaticFunctionTag*) {
     }
 }
 
+int CountKnownFormsInList(StaticFunctionTag*, BGSListForm* a_list) {
+    if (!a_list) return 0;
+    int result = 0;
+    a_list->ForEachForm([&](TESForm* form) {
+        if (form && form->GetKnown()) result++;
+        return BSContainer::ForEachResult::kContinue;
+    });
+    return result;
+}
+
+int CountKnownFormsInArray(StaticFunctionTag*, const RE::reference_array<TESForm*> a_array) {
+    if (a_array.empty()) return 0;
+    int result = 0;
+    for (auto* form : a_array) {
+        if (form && form->GetKnown()) result++;
+    }
+    return result;
+}
+
+bool IsPickpocketing(StaticFunctionTag*) { return GetContainerMenuMode(nullptr) == 2; }
+
 bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     std::string_view script = "ShazdehUtils";
 
@@ -1238,6 +1259,11 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("ActorHasSpellEffectInArray", script, ActorHasSpellEffectInArray);
     vm->RegisterFunction("IsDiseased", script, IsDiseased);
     vm->RegisterFunction("GetDiseasesCount", script, GetDiseasesCount);
+
+    // player
+    vm->RegisterFunction("CountKnownFormsInList", script, CountKnownFormsInList);
+    vm->RegisterFunction("CountKnownFormsInArray", script, CountKnownFormsInArray);
+    vm->RegisterFunction("IsPickpocketing", script, IsPickpocketing);
 
     // clipboard
     vm->RegisterFunction("SetClipboard", script, SetClipboard);
