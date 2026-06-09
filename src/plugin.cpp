@@ -1211,6 +1211,32 @@ int CountKnownFormsInArray(StaticFunctionTag*, const RE::reference_array<TESForm
 
 bool IsPickpocketing(StaticFunctionTag*) { return GetContainerMenuMode(nullptr) == 2; }
 
+void SetMapMarkerVisibility(StaticFunctionTag*, TESObjectREFR* a_ref, bool a_show = true) {
+    if (!a_ref) return;
+    auto* extra = a_ref->extraList.GetByType<ExtraMapMarker>();
+    if (!extra) return;
+    extra->mapData->SetVisible(a_show);
+}
+
+void SetVisibilityForAllMapMarkersInList(StaticFunctionTag*, BGSListForm* a_list, bool a_show = true) {
+    if (!a_list) return;
+    a_list->ForEachForm([&](TESForm* form) {
+        if (form && form->Is(FormType::Reference)) {
+            auto* ref = form->As<TESObjectREFR>();
+            SetMapMarkerVisibility(nullptr, ref, a_show);
+        }
+        return BSContainer::ForEachResult::kContinue;
+    });
+}
+
+void SetVisibilityForAllMapMarkersInArray(StaticFunctionTag*, const RE::reference_array<TESObjectREFR*> a_array,
+                                          bool a_show = true) {
+    if (a_array.empty()) return;
+    for (auto* form : a_array) {
+        SetMapMarkerVisibility(nullptr, form, a_show);
+    }
+}
+
 bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     std::string_view script = "ShazdehUtils";
 
@@ -1292,6 +1318,9 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("SimulateLeftStickInput", script, SimulateLeftStickInput);
 
     // objectreference
+    vm->RegisterFunction("SetMapMarkerVisibility", script, SetMapMarkerVisibility);
+    vm->RegisterFunction("SetVisibilityForAllMapMarkersInList", script, SetVisibilityForAllMapMarkersInList);
+    vm->RegisterFunction("SetVisibilityForAllMapMarkersInArray", script, SetVisibilityForAllMapMarkersInArray);
     vm->RegisterFunction("GetLinkedDoor", script, GetLinkedDoor);
     vm->RegisterFunction("FindActorsInFactionNearRef", script, FindActorsInFactionNearRef);
     vm->RegisterFunction("FindActorsWithVoiceTypeNearRef", script, FindActorsWithVoiceTypeNearRef);
