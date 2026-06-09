@@ -1211,29 +1211,52 @@ int CountKnownFormsInArray(StaticFunctionTag*, const RE::reference_array<TESForm
 
 bool IsPickpocketing(StaticFunctionTag*) { return GetContainerMenuMode(nullptr) == 2; }
 
-void SetMapMarkerVisibility(StaticFunctionTag*, TESObjectREFR* a_ref, bool a_show = true) {
+void _SetMarkerVisibility(TESObjectREFR* a_ref, bool a_show = true, bool a_allowFastTravel = false) {
     if (!a_ref) return;
     auto* extra = a_ref->extraList.GetByType<ExtraMapMarker>();
     if (!extra) return;
     extra->mapData->SetVisible(a_show);
+    if (a_show && a_allowFastTravel) {
+        extra->mapData->flags.set(MapMarkerData::Flag::kCanTravelTo);
+    }
 }
 
-void SetVisibilityForAllMapMarkersInList(StaticFunctionTag*, BGSListForm* a_list, bool a_show = true) {
+void HideMapMarker(StaticFunctionTag*, TESObjectREFR* a_ref) { _SetMarkerVisibility(a_ref, false); }
+
+void HideAllMapMarkersInList(StaticFunctionTag*, BGSListForm* a_list) {
     if (!a_list) return;
     a_list->ForEachForm([&](TESForm* form) {
         if (form && form->Is(FormType::Reference)) {
             auto* ref = form->As<TESObjectREFR>();
-            SetMapMarkerVisibility(nullptr, ref, a_show);
+            _SetMarkerVisibility(ref, false);
         }
         return BSContainer::ForEachResult::kContinue;
     });
 }
 
-void SetVisibilityForAllMapMarkersInArray(StaticFunctionTag*, const RE::reference_array<TESObjectREFR*> a_array,
-                                          bool a_show = true) {
+void ShowAllMapMarkersInList(StaticFunctionTag*, BGSListForm* a_list, bool a_allowFastTravel = false) {
+    if (!a_list) return;
+    a_list->ForEachForm([&](TESForm* form) {
+        if (form && form->Is(FormType::Reference)) {
+            auto* ref = form->As<TESObjectREFR>();
+            _SetMarkerVisibility(ref, true, a_allowFastTravel);
+        }
+        return BSContainer::ForEachResult::kContinue;
+    });
+}
+
+void HideAllMapMarkersInArray(StaticFunctionTag*, const RE::reference_array<TESObjectREFR*> a_array) {
     if (a_array.empty()) return;
     for (auto* form : a_array) {
-        SetMapMarkerVisibility(nullptr, form, a_show);
+        _SetMarkerVisibility(form, false);
+    }
+}
+
+void ShowAllMapMarkersInArray(StaticFunctionTag*, const RE::reference_array<TESObjectREFR*> a_array,
+                              bool a_allowFastTravel = false) {
+    if (a_array.empty()) return;
+    for (auto* form : a_array) {
+        _SetMarkerVisibility(form, true, a_allowFastTravel);
     }
 }
 
@@ -1318,9 +1341,11 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("SimulateLeftStickInput", script, SimulateLeftStickInput);
 
     // objectreference
-    vm->RegisterFunction("SetMapMarkerVisibility", script, SetMapMarkerVisibility);
-    vm->RegisterFunction("SetVisibilityForAllMapMarkersInList", script, SetVisibilityForAllMapMarkersInList);
-    vm->RegisterFunction("SetVisibilityForAllMapMarkersInArray", script, SetVisibilityForAllMapMarkersInArray);
+    vm->RegisterFunction("HideMapMarker", script, HideMapMarker);
+    vm->RegisterFunction("HideAllMapMarkersInList", script, HideAllMapMarkersInList);
+    vm->RegisterFunction("HideAllMapMarkersInArray", script, HideAllMapMarkersInArray);
+    vm->RegisterFunction("ShowAllMapMarkersInList", script, ShowAllMapMarkersInList);
+    vm->RegisterFunction("ShowAllMapMarkersInArray", script, ShowAllMapMarkersInArray);
     vm->RegisterFunction("GetLinkedDoor", script, GetLinkedDoor);
     vm->RegisterFunction("FindActorsInFactionNearRef", script, FindActorsInFactionNearRef);
     vm->RegisterFunction("FindActorsWithVoiceTypeNearRef", script, FindActorsWithVoiceTypeNearRef);

@@ -190,9 +190,12 @@ Function SimulateLeftStickInput(Float afXValue = 0.0, Float afYValue = 0.0) Glob
 ;----------------------------------------------------------------------------------------------------------
 
 ; mark MapMarker references to be visible/not on the map menu
-Function SetMapMarkerVisibility(ObjectReference akMapMarker, Bool abVisible = True) Global Native
-Function SetVisibilityForAllMapMarkersInList(FormList akList, Bool abVisible = True) Global Native
-Function SetVisibilityForAllMapMarkersInArray(ObjectReference akRefs, Bool abVisible = True) Global Native
+; ShowMapMarker already exists: ObjectReference.AddToMap()
+Function HideMapMarker(ObjectReference akMapMarker) Global Native
+Function HideAllMapMarkersInList(FormList akList) Global Native
+Function HideAllMapMarkersInArray(ObjectReference[] akRefs) Global Native
+Function ShowAllMapMarkersInList(FormList akList, Bool abAllowFastTravel = False) Global Native
+Function ShowAllMapMarkersInArray(ObjectReference[] akRefs, Bool abAllowFastTravel = False) Global Native
 
 ; used for teleport doors, gives you the other door connected to this Reference
 ObjectReference Function GetLinkedDoor(ObjectReference akRef) Global Native
