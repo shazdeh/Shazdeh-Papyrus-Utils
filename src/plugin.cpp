@@ -1,9 +1,11 @@
 #include <windows.h>
 #include <string>
 #include <unordered_set>
-#include "SimpleIni.h";
+#include "SimpleIni.h"
 
 using namespace std::literals;
+
+std::vector<int> GetPluginVersion(StaticFunctionTag*) { return {1, 0, 7}; }
 
 static inline std::string ToLower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
@@ -29,6 +31,17 @@ inline std::size_t find_ci(const std::string& haystack, const std::string& needl
     }
 
     return std::string::npos;
+}
+
+template <typename T>
+bool compare(T a, T b, const std::string& op) {
+    if (op == "=" || op == "==") return a == b;
+    if (op == "<") return a < b;
+    if (op == "<=") return a <= b;
+    if (op == ">") return a > b;
+    if (op == ">=") return a >= b;
+    if (op == "!=") return a != b;
+    return false;
 }
 
 template <typename T, typename C, typename... Args>
@@ -610,7 +623,6 @@ void TransferItemFromContainersList(StaticFunctionTag*, BGSListForm* a_list, TES
                                     int a_count) {
     if (!a_target || !a_form || !a_list) return;
 
-    int transferred = 0;
     a_list->ForEachForm([a_form, a_target, &a_count](TESForm* listItem) {
         TESObjectREFR* currentRef = listItem->As<TESObjectREFR>();
         if (currentRef) {
@@ -632,7 +644,6 @@ void TransferItemFromContainersArray(StaticFunctionTag*, std::vector<TESObjectRE
                                      TESForm* a_form, int a_count) {
     if (!a_target || !a_form) return;
 
-    int transferred = 0;
     for (auto* ref : a_sources) {
         if (ref) {
             int available = _getItemCountInRef(ref, a_form);
@@ -886,7 +897,7 @@ std::string GetAVName(StaticFunctionTag*, int a_id) {
 int CountValuesInBoolArray(StaticFunctionTag*, std::vector<bool> a_arr, bool a_value = false) {
     int result = 0;
     for (auto value : a_arr) {
-        if (value == value) result++;
+        if (value == a_value) result++;
     }
     return result;
 }
@@ -1260,8 +1271,98 @@ void ShowAllMapMarkersInArray(StaticFunctionTag*, const RE::reference_array<TESO
     }
 }
 
+std::vector<IngredientItem*> GetAllIngredientsWithEffect(StaticFunctionTag*, EffectSetting* a_effect, bool a_learn = false) {
+    std::vector<IngredientItem*> result;
+    if (!a_effect) return result;
+    const auto& all = TESDataHandler::GetSingleton()->GetFormArray<IngredientItem>();
+    for (auto ingregient : all) {
+        int i = 0;
+        for (auto effect : ingregient->effects) {
+            if (effect->baseEffect == a_effect) {
+                if (a_learn) ingregient->LearnEffect(i);
+                result.push_back(ingregient);
+                break;
+            }
+            i++;
+        }
+    }
+    return result;
+}
+
+int GetSpellMinimumSkillLevel(StaticFunctionTag*, SpellItem* a_spell) {
+    if (!a_spell) return 0;
+    int min = 0;
+    for (auto effect : a_spell->effects) {
+        auto minLevel = effect->baseEffect->GetMinimumSkillLevel();
+        if (minLevel > min) {
+            min = minLevel;
+        }
+    }
+
+    return min;
+}
+
+std::vector<SpellItem*> GetAllSpells(StaticFunctionTag*, BSFixedString a_skill = "", int a_minSkill = 0,
+                                             std::string a_minSkillComp = "=") {
+    std::vector<SpellItem*> result;
+    const auto& all = TESDataHandler::GetSingleton()->GetFormArray<TESObjectBOOK>();
+    ActorValue av = ActorValue::kNone;
+    if (a_skill == "destruction") {
+        av = ActorValue::kDestruction;
+    } else if (a_skill == "alteration") {
+        av = ActorValue::kAlteration;
+    } else if (a_skill == "conjuration") {
+        av = ActorValue::kConjuration;
+    } else if (a_skill == "restoration") {
+        av = ActorValue::kRestoration;
+    } else if (a_skill == "illusion") {
+        av = ActorValue::kIllusion;
+    }
+
+    for (auto book : all) {
+        if (!book->TeachesSpell()) continue;
+        if (auto spell = book->GetSpell(); spell) {
+            if (av != ActorValue::kNone && spell->GetAssociatedSkill() != av) continue;
+            if (a_minSkill > 0 && !compare(GetSpellMinimumSkillLevel(nullptr, spell), a_minSkill, a_minSkillComp)) continue;
+            result.push_back(spell);
+        }
+    }
+
+    return result;
+}
+
+std::vector<TESObjectBOOK*> GetAllSpellBooks(StaticFunctionTag*, BSFixedString a_skill = "", int a_minSkill = 0,
+                                             std::string a_minSkillComp = "=") {
+    std::vector<TESObjectBOOK*> result;
+    const auto& all = TESDataHandler::GetSingleton()->GetFormArray<TESObjectBOOK>();
+    ActorValue av = ActorValue::kNone;
+    if (a_skill == "destruction") {
+        av = ActorValue::kDestruction;
+    } else if (a_skill == "alteration") {
+        av = ActorValue::kAlteration;
+    } else if (a_skill == "conjuration") {
+        av = ActorValue::kConjuration;
+    } else if (a_skill == "restoration") {
+        av = ActorValue::kRestoration;
+    } else if (a_skill == "illusion") {
+        av = ActorValue::kIllusion;
+    }
+
+    for (auto book : all) {
+        if (!book->TeachesSpell()) continue;
+        if (auto spell = book->GetSpell(); spell) {
+            if (av != ActorValue::kNone && spell->GetAssociatedSkill() != av) continue;
+            if (a_minSkill > 0 && !compare(GetSpellMinimumSkillLevel(nullptr, spell), a_minSkill, a_minSkillComp)) continue;
+            result.push_back(book);
+        }
+    }
+    return result;
+}
+
 bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     std::string_view script = "ShazdehUtils";
+
+    vm->RegisterFunction("GetVersion", script, GetPluginVersion);
 
     // game
     vm->RegisterFunction("GetGameLanguage", script, GetGameLanguage);
@@ -1335,6 +1436,10 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("TransferItemFromContainersList", script, TransferItemFromContainersList);
     vm->RegisterFunction("TransferItemFromContainersArray", script, TransferItemFromContainersArray);
     vm->RegisterFunction("GetAllDiseaseSpells", script, GetAllDiseaseSpells);
+    vm->RegisterFunction("GetAllIngredientsWithEffect", script, GetAllIngredientsWithEffect);
+    vm->RegisterFunction("GetSpellMinimumSkillLevel", script, GetSpellMinimumSkillLevel);
+    vm->RegisterFunction("GetAllSpells", script, GetAllSpells);
+    vm->RegisterFunction("GetAllSpellBooks", script, GetAllSpellBooks);
 
     // gamepad
     vm->RegisterFunction("IsGamepadConnected", script, IsGamepadConnected);

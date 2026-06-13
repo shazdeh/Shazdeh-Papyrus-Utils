@@ -1,5 +1,7 @@
 ScriptName ShazdehUtils Hidden
 
+Int[] Function GetVersion() Global Native
+
 ;----------------------------------------------------------------------------------------------------------
 ;Game
 ;----------------------------------------------------------------------------------------------------------
@@ -171,6 +173,15 @@ Function TransferItemFromContainersArray(FormList akList, ObjectReference[] akRe
 Function TransferItemFromContainersList(FormList akList, ObjectReference akRef, Form akItem, Int aiCount) Global Native
 
 Spell[] Function GetAllDiseaseSpells() Global Native
+
+; returns all Ingredients with akEffect, optionally also reveals that effect on the item
+Ingredient[] Function GetAllIngredientsWithEffect(MagicEffect akEffect, Bool abLearn = False) Global Native
+
+Int Function GetSpellMinimumSkillLevel(Spell akSpell) Global Native
+
+Spell[] Function GetAllSpells(String asSkill = "", Int aiMinSkill = 0, String asCompare = "=") Global Native
+
+Book[] Function GetAllSpellBooks(String asSkill = "", Int aiMinSkill = 0, String asCompare = "=") Global Native
 
 
 ;----------------------------------------------------------------------------------------------------------
