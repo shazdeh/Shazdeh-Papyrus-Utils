@@ -1359,6 +1359,11 @@ std::vector<TESObjectBOOK*> GetAllSpellBooks(StaticFunctionTag*, BSFixedString a
     return result;
 }
 
+void DrinkPotion(StaticFunctionTag*, Actor* a_actor, AlchemyItem* a_potion) {
+    if (!a_actor || !a_potion) return;
+    a_actor->DrinkPotion(a_potion, {});
+}
+
 bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     std::string_view script = "ShazdehUtils";
 
@@ -1409,6 +1414,7 @@ bool PapyrusBinder(BSScript::IVirtualMachine* vm) {
     vm->RegisterFunction("ActorHasSpellEffectInArray", script, ActorHasSpellEffectInArray);
     vm->RegisterFunction("IsDiseased", script, IsDiseased);
     vm->RegisterFunction("GetDiseasesCount", script, GetDiseasesCount);
+    vm->RegisterFunction("DrinkPotion", script, DrinkPotion);
 
     // player
     vm->RegisterFunction("CountKnownFormsInList", script, CountKnownFormsInList);

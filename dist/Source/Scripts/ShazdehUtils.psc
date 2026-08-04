@@ -91,6 +91,8 @@ Bool Function ActorHasSpellEffect(Actor akActor, Form akForm) Global Native
 Bool Function ActorHasSpellEffectInList(Actor akActor, FormList akList) Global Native
 Bool Function ActorHasSpellEffectInArray(Actor akActor, Form[] arForms) Global Native
 
+Function DrinkPotion(Actor akActor, Potion akPotion) Global Native
+
 
 ;----------------------------------------------------------------------------------------------------------
 ;Player
